@@ -1,0 +1,131 @@
+package com.ubs.wma.kangaroo.platform.mdc.service.mdc.impl;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ubs.wma.kangaroo.platform.mdc.model.mdc.ApproveRequest;
+import com.ubs.wma.kangaroo.platform.mdc.model.mdc.ApproveResponse;
+import com.ubs.wma.kangaroo.platform.mdc.model.mdc.CancellationRequest;
+import com.ubs.wma.kangaroo.platform.mdc.model.mdc.CancellationResponse;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestClient;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+class LegacyMDCRequestClosureImplTest {
+
+    @Mock
+    private RestClient restClient;
+
+    @Mock
+    private ObjectMapper objectMapper;
+
+    @Mock
+    private RestClient.RequestBodyUriSpec requestBodyUriSpec;
+
+    @Mock
+    private RestClient.RequestBodySpec requestBodySpec;
+
+    @Mock
+    private RestClient.ResponseSpec responseSpec;
+
+    @InjectMocks
+    private LegacyMDCRequestClosureImpl legacyMDCRequestClosure;
+
+    @BeforeEach
+    void setUp() {
+        legacyMDCRequestClosure = new LegacyMDCRequestClosureImpl(restClient, objectMapper);
+    }
+
+    @Test
+    void cancelLegacyMDCRequestTest() throws IOException {
+        CancellationRequest cancellationRequest = Mockito.mock(CancellationRequest.class);
+        CancellationResponse expectedResponse = Mockito.mock(CancellationResponse.class);
+
+        when(restClient.post()).thenReturn(requestBodyUriSpec);
+        when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodySpec);
+        when(requestBodySpec.body(any())).thenReturn(requestBodySpec);
+        when(requestBodySpec.retrieve()).thenReturn(responseSpec);
+        when(responseSpec.body(CancellationResponse.class)).thenReturn(expectedResponse);
+
+        CancellationResponse result = legacyMDCRequestClosure.cancelLegacyMDCRequest(123L, cancellationRequest, "SE08230");
+
+        assertNotNull(result);
+        assertEquals(expectedResponse, result);
+    }
+
+    @Test
+    void cancelLegacyMDCRequestTestException() throws IOException {
+        CancellationRequest cancellationRequest = Mockito.mock(CancellationRequest.class);
+        String errorJson = "{\"header\":{\"success\":false}}";
+        CancellationResponse expectedResponse = new CancellationResponse();
+
+        when(restClient.post()).thenReturn(requestBodyUriSpec);
+        when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodySpec);
+        when(requestBodySpec.body(any())).thenReturn(requestBodySpec);
+        when(requestBodySpec.retrieve()).thenThrow(
+                new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Bad Request", errorJson.getBytes(), StandardCharsets.UTF_8)
+        );
+
+        when(objectMapper.readValue(errorJson.getBytes(StandardCharsets.UTF_8), CancellationResponse.class))
+                .thenReturn(expectedResponse);
+
+        CancellationResponse result = legacyMDCRequestClosure.cancelLegacyMDCRequest(123L, cancellationRequest, "SE08230");
+
+        assertNotNull(result);
+        assertEquals(expectedResponse, result);
+    }
+
+    @Test
+    void approveLegacyMDCRequestTest() throws IOException {
+        ApproveRequest approveRequest = Mockito.mock(ApproveRequest.class);
+        ApproveResponse expectedResponse = Mockito.mock(ApproveResponse.class);
+
+        when(restClient.post()).thenReturn(requestBodyUriSpec);
+        when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodySpec);
+        when(requestBodySpec.body(any())).thenReturn(requestBodySpec);
+        when(requestBodySpec.retrieve()).thenReturn(responseSpec);
+        when(responseSpec.body(ApproveResponse.class)).thenReturn(expectedResponse);
+
+        ApproveResponse result = legacyMDCRequestClosure.approveLegacyMDCRequest(123L, approveRequest, "SE08230");
+
+        assertNotNull(result);
+        assertEquals(expectedResponse, result);
+    }
+
+    @Test
+    void approveLegacyMDCRequestTestException() throws IOException {
+        ApproveRequest approveRequest = Mockito.mock(ApproveRequest.class);
+        String errorJson = "{\"header\":{\"success\":false}}";
+        ApproveResponse expectedResponse = new ApproveResponse();
+
+        when(restClient.post()).thenReturn(requestBodyUriSpec);
+        when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodySpec);
+        when(requestBodySpec.body(any())).thenReturn(requestBodySpec);
+        when(requestBodySpec.retrieve()).thenThrow(
+                new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Bad Request", errorJson.getBytes(), StandardCharsets.UTF_8)
+        );
+
+        when(objectMapper.readValue(errorJson.getBytes(StandardCharsets.UTF_8), ApproveResponse.class))
+                .thenReturn(expectedResponse);
+
+        ApproveResponse result = legacyMDCRequestClosure.approveLegacyMDCRequest(123L, approveRequest, "SE08230");
+
+        assertNotNull(result);
+        assertEquals(expectedResponse, result);
+    }
+}
